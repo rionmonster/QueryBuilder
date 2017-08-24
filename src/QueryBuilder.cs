@@ -2,21 +2,50 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Text;
 
 namespace QueryBuilder
 {
     public class QueryBuilder : IDisposable
     {
-        // Backing query stores
-        private DynamicParameters _params;
-        private int _paramCount = 0;
+        public string CurrentQuery => _stringBuilder.ToString();
+
+        // Storage for the current query
+        private StringBuilder _stringBuilder = new StringBuilder();
+
+        // Question: Is this needed right now? Would a Dictionary alone be sufficient?
+        private DynamicParameters _params = new DynamicParameters();
+        // Dictionary to keep track of what parameters we've seen and their respective parameters
         private Dictionary<object, string> _paramMap = new Dictionary<object, string>();
+        // Counter for parameter naming purposes
+        private int _paramCount = 0;
 
         public QueryBuilder()
         {
-            _params = new DynamicParameters();
+            
         }
 
+        // TODO: Add methods to retrieve SqlCommand and DapperParameters objects
+        //       These may / may not be stored internally, who knows.
+        public SqlCommand GetSqlCommand()
+        {
+            var sqlCommand = new SqlCommand(CurrentQuery);
+            foreach (var key in _paramMap.Keys)
+            {
+                sqlCommand.Parameters.AddWithValue(_paramMap[key], key);
+            }
+
+            return sqlCommand;
+        }
+
+        /// <summary>
+        /// Builds and returns a parameterized string based on the string that was provided. 
+        /// NOTE: All interpolated values WILL be parameterized, so ensure you are only
+        /// passing in primatives or other non-complex types (right now)
+        /// </summary>
+        /// <param name="sql">A SQL string that may / may not contain interpolated values</param>
+        /// <returns>A parameterized SQL string</returns>
         public string Build(FormattableString sql)
         {
             // Get all interpolated values and parameterize them
@@ -35,7 +64,10 @@ namespace QueryBuilder
             }
 
             // Automatically handle parameterizing interpolated strings
-            return string.Format(sql.Format, pArgs.ToArray());
+            var result = string.Format(sql.Format, pArgs.ToArray());
+            _stringBuilder.Append(result);
+
+            return result;
         }
 
         private string Parameterize(object parameter)

@@ -4,6 +4,9 @@
     {
         public static void Main(string[] args)
         {
+            // Breakpoint since I'm too lazy to write to the Console right now...
+            System.Diagnostics.Debugger.Break();
+
             using (var queryBuilder = new QueryBuilder())
             {
                 var basic = queryBuilder.Build($@"
