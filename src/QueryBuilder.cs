@@ -54,8 +54,47 @@ namespace QueryBuilder
             {
                 switch (argument)
                 {
-                    case IList arguments:
-                        pArgs.Add(Parameterize(arguments));
+                    case ValueTuple<IList, bool> args:
+                        // If the second parameter is false, then it's been requested that this parameter simply
+                        // be passed through as expected.
+                        if (!args.Item2)
+                        {
+                            pArgs.Add(Sanitize(args.Item1));
+                        }
+                        else
+                        {
+                            pArgs.Add(Parameterize(args));
+                        }
+
+                        break;
+                    case ValueTuple<string, bool> arg:
+                        // If the second parameter is false, then it's been requested that this parameter simply
+                        // be passed through as expected.
+                        if (!arg.Item2)
+                        {
+                            pArgs.Add(arg.Item1);
+                        }
+                        else
+                        {
+                            pArgs.Add(Parameterize(arg.Item1));
+                        }
+
+                        break;
+                    case ValueTuple<object, bool> arg:
+                        // If the second parameter is false, then it's been requested that this parameter simply
+                        // be passed through as expected.
+                        if (!arg.Item2)
+                        {
+                            pArgs.Add($"{ arg.Item1 }");
+                        }
+                        else
+                        {
+                            pArgs.Add(Parameterize(arg.Item1));
+                        }
+
+                        break;
+                    case IList args:
+                        pArgs.Add(Parameterize(args));
                         break;
                     default:
                         pArgs.Add(Parameterize(argument));
@@ -91,6 +130,18 @@ namespace QueryBuilder
             foreach (var parameter in parameters)
             {
                 paramNames.Add(Parameterize(parameter));
+            }
+
+            return string.Join(",", paramNames);
+        }
+
+
+        private string Sanitize(IList parameters)
+        {
+            var paramNames = new List<string>();
+            foreach (var parameter in parameters)
+            {
+                paramNames.Add($"{ parameter }");
             }
 
             return string.Join(",", paramNames);
