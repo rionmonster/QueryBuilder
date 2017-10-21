@@ -99,6 +99,55 @@ AND     TheLoneliestNumber = @P1
 
 Notice the repetition of the @P1 parameter.
 
+## Unparameterized Parameters
+
+Some scenarios involving building dynamic queries within C# may often require the use of parameters that are not parameterized (or that SQL cannot accept as
+parameters such as table and column names without the use of dynamic SQL). We can accomplish this through the use of a ValueTuple parameter that accepts both
+the value to be parameterized and a boolean to indicate if the value should be parameterized or not:
+
+```
+using (var queryBuilder = new QueryBuilder())
+{
+    var basic = queryBuilder.Build($@"
+        SELECT  *
+        FROM    {("YourTable", false)}
+    ");
+}
+
+```
+
+which would result similar to as you might expect dynamic SQL to work:
+
+```
+SELECT	*
+FROM	YourTable
+```
+
+Or a more complex example might look like:
+
+```
+using (var queryBuilder = new QueryBuilder())
+{
+    var basic = queryBuilder.Build($@"
+        SELECT  {("YourColumn", false)}
+        FROM    SomeTable
+		WHERE	TheAnswer IN {(new int[]{ 1, 2, 3}, false)}
+		AND		{("SomeOtherColumn", false)} = { 42 }
+    ");
+}
+```
+
+which yields:
+
+```
+SELECT	YourColumn
+FROM	SomeTable
+WHERE	TheAnswer IN (1, 2, 3)
+AND		SomeOtherColumn = 42
+```
+
+It's worth noting, much as I'll repeat below, that this is super dangerous and ripe for introducing some SQL Injection, which no one wants.
+
 ## Status
 
 This project is primarily just a proof of concept at this point and isn't currently planned for any widespread production use, so please don't 
